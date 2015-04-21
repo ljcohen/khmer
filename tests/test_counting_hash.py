@@ -9,11 +9,11 @@ import gzip
 
 import khmer
 import khmer_tst_utils as utils
+from khmer_tst_utils import attr
 from khmer import ReadParser
 import screed
 
 import nose
-from nose.plugins.attrib import attr
 
 MAX_COUNT = 255
 MAX_BIGCOUNT = 65535

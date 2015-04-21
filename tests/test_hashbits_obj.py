@@ -18,7 +18,7 @@ from screed.fasta import fasta_iter
 import screed
 
 import khmer_tst_utils as utils
-from nose.plugins.attrib import attr
+from khmer_tst_utils import attr
 
 
 def teardown():

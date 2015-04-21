@@ -14,12 +14,12 @@ import stat
 import shutil
 from cStringIO import StringIO
 import traceback
-from nose.plugins.attrib import attr
 import subprocess
 import threading
 import bz2
 import io
 
+from khmer_tst_utils import attr
 import khmer_tst_utils as utils
 import khmer
 import khmer.kfile

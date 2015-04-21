@@ -5,7 +5,7 @@
 # Contact: khmer-project@idyll.org
 #
 import khmer
-from nose.plugins.attrib import attr
+from khmer_tst_utils import attr
 
 
 @attr('jenkins')

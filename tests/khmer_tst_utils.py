@@ -13,6 +13,24 @@ import nose
 import sys
 import traceback
 import subprocess
+from functools import wraps
+
+
+def attr(tag):
+    try:
+        import pytest
+        mark = getattr(pytest.mark, tag)
+    except ImportError:
+        from nose.plugins.attrib import attr as nose_attr
+        mark = nose_attr(tag)
+
+    def decorator(f):
+        @wraps(f)
+        @mark
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def get_test_data(filename):

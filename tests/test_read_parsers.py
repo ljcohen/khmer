@@ -11,7 +11,7 @@
 import khmer
 from khmer import ReadParser
 import khmer_tst_utils as utils
-from nose.plugins.attrib import attr
+from khmer_tst_utils import attr
 from functools import reduce
 
 

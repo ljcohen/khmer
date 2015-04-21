@@ -9,7 +9,7 @@
 
 import khmer
 import khmer_tst_utils as utils
-from nose.plugins.attrib import attr
+from khmer_tst_utils import attr
 
 MAX_COUNT = 255
 
