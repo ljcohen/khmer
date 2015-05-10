@@ -4,6 +4,8 @@
    k-mer counts.
    * tests/test_sandbox_scripts.py: added tests for count-kmers.py and
    count-kmers-single.py.
+   * sandbox/README.rst: added count-kmers.py and count-kmers-single.py to
+   sandbox/README.
 
 2015-04-23  Lex Nederbragt  <lex.nederbragt@ibv.uio.no>
 
