@@ -882,6 +882,12 @@ hash_consume_fasta_with_reads_parser(khmer_KCountingHash_Object * me,
     Py_BEGIN_ALLOW_THREADS
     try {
         counting->consume_fasta(rparser, total_reads, n_consumed);
+    } catch (StreamReadError &e) {
+        exc = e.what();
+        exc_raised = true;
+    } catch (InvalidRead &e) {
+        exc = e.what();
+        exc_raised = true;
     } catch (_khmer_signal &e) {
         exc = e.get_message().c_str();
         exc_raised = true;
