@@ -1,3 +1,8 @@
+2015-05-21  Kevin Murray  <spam@kdmurray.id.au>
+
+   * third-party/zstd,setup.{py,cfg},lib/Makefile,lib/counting.{cc,hh}: Add
+   compression of CountingHashes using the fast but effective Zstd algorithm.
+
 2015-05-20  Jacob Fenton  <bocajnotnef@gmail.com>
 
    * oxli/{__init__,khmer_api,common}.py,scripts/build-graph.py,
