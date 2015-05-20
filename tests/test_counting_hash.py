@@ -17,6 +17,7 @@ import screed
 
 import nose
 from nose.plugins.attrib import attr
+from nose.tools import assert_raises
 
 from tests.test_scripts import scriptpath
 
@@ -311,30 +312,6 @@ def test_2_kadian():
     assert x == 1, x
 
 
-def test_save_load():
-    inpath = utils.get_test_data('random-20-a.fa')
-    savepath = utils.get_temp_filename('tempcountingsave0.ht')
-
-    sizes = list(PRIMES_1m)
-    sizes.append(1000005)
-
-    hi = khmer.CountingHash(12, sizes)
-    hi.consume_fasta(inpath)
-    hi.save(savepath)
-
-    ht = khmer.CountingHash(12, sizes)
-    ht.load(savepath)
-
-    tracking = khmer._Hashbits(12, sizes)
-    x = hi.abundance_distribution(inpath, tracking)
-
-    tracking = khmer._Hashbits(12, sizes)
-    y = ht.abundance_distribution(inpath, tracking)
-
-    assert sum(x) == 3966, sum(x)
-    assert x == y, (x, y)
-
-
 def test_load_gz():
     inpath = utils.get_test_data('random-20-a.fa')
 
@@ -370,51 +347,85 @@ def test_load_gz():
     assert x == y, (x, y)
 
 
-def test_save_load_gz():
-    inpath = utils.get_test_data('random-20-a.fa')
-    savepath = utils.get_temp_filename('tempcountingsave2.ht.gz')
+def test_counting_hash_consume_save_load_abund():
+    """Test cycle of consume, save, load, abundance-dist with (un)zipped HT"""
 
-    sizes = list(PRIMES_1m)
-    sizes.append(1000005)
+    def _do_c_h_consume_save_load_abund(outfile, infile='random-20-a.fa',
+                                        expected_sum=3966):
+        inpath = utils.get_test_data(infile)
+        savepath = utils.get_temp_filename('tempcountingsave2.ht.gz')
 
-    hi = khmer.CountingHash(12, sizes)
-    hi.consume_fasta(inpath)
-    hi.save(savepath)
+        sizes = list(PRIMES_1m)
 
-    ht = khmer.CountingHash(12, sizes)
-    ht.load(savepath)
+        orig_ht = khmer.CountingHash(12, sizes)
+        orig_ht.consume_fasta(inpath)
+        orig_ht.save(savepath)
 
-    tracking = khmer._Hashbits(12, sizes)
-    x = hi.abundance_distribution(inpath, tracking)
+        loaded_ht = khmer.load_counting_hash(savepath)
+        tracking = khmer._Hashbits(12, sizes)
+        orig = orig_ht.abundance_distribution(inpath, tracking)
 
-    tracking = khmer._Hashbits(12, sizes)
-    y = ht.abundance_distribution(inpath, tracking)
+        tracking = khmer._Hashbits(12, sizes)
+        loaded = loaded_ht.abundance_distribution(inpath, tracking)
 
-    assert sum(x) == 3966, sum(x)
-    assert x == y, (x, y)
+        assert sum(orig) == expected_sum, sum(orig)
+        assert orig == loaded, (orig, loaded)
 
-def test_save_load_zstd():
-    inpath = utils.get_test_data('random-20-a.fa')
-    savepath = utils.get_temp_filename('tempcountingsave2.ht.zstd')
+    for ext in ['', '.gz', '.zstd']:
+        _do_c_h_consume_save_load_abund('temp_ht_' + ext)
 
-    sizes = list(PRIMES_1m)
-    sizes.append(1000005)
 
-    hi = khmer.CountingHash(12, sizes)
-    hi.consume_fasta(inpath)
-    hi.save(savepath)
+def test_save_load_bigcount():
+    """Test a save, load cycle of CountingHash with bigcounts & all zip
+    formats"""
 
-    ht = khmer.CountingHash(12, sizes)
-    ht.load(savepath)
+    def _do_c_h_consume_save_load_bigcount(outfile):
+        savepath = utils.get_temp_filename(outfile)
 
-    tracking = khmer._Hashbits(12, sizes)
-    x = hi.abundance_distribution(inpath, tracking)
+        kmer = 'ATATATATATAT'
+        sizes = [10001,]
 
-    tracking = khmer._Hashbits(12, sizes)
-    y = ht.abundance_distribution(inpath, tracking)
+        orig_ht = khmer.CountingHash(12, sizes)
+        orig_ht.set_use_bigcount(True)
+        for _ in range(257):
+            orig_ht.count(kmer)
+        orig_ht.save(savepath)
+        del orig_ht
 
-    assert sum(x) == 3966, sum(x)
-    assert x == y, (x, y)
+        loaded_ht = khmer.load_counting_hash(savepath)
+
+        assert loaded_ht.ksize() == 12
+        assert loaded_ht.get(kmer) == 257
+        assert loaded_ht.get_use_bigcount() == True
+
+    for ext in ['', '.gz', '.zstd']:
+        _do_c_h_consume_save_load_bigcount('temp_ht_' + ext)
+
+
+def test_zstd_save_tiny_table():
+    """test zstd save with tiny table created"""
+    savepath = utils.get_temp_filename("test.kh.zstd")
+
+    ht = khmer.CountingHash(1, [1,])
+    with assert_raises(IOError) as ar:
+        ht.save(savepath)
+    assert "ZSTD_ERROR" in str(ar.exception), str(ar.exception)
+
+
+def test_zstd_load_unzipped_table():
+    """test loading a normal table with .zstd extension"""
+    normal_path = utils.get_test_data("normC20k20.ct")
+    zstd_path = utils.get_temp_filename("test.kh.zstd")
+
+    shutil.copyfile(normal_path, zstd_path)
+
+    expected_err_msg = "Invalid zstd-compressed counting hash"
+
+    with assert_raises(IOError) as ar:
+        khmer.load_counting_hash(zstd_path)
+    err_msg = str(ar.exception)
+    assert expected_err_msg in err_msg, err_msg
+
 
 def test_trim_full():
     hi = khmer.new_counting_hash(6, 1e6, 2)
