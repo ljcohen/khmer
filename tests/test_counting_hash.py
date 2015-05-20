@@ -383,7 +383,7 @@ def test_save_load_bigcount():
         savepath = utils.get_temp_filename(outfile)
 
         kmer = 'ATATATATATAT'
-        sizes = [10001,]
+        sizes = [10001, ]
 
         orig_ht = khmer.CountingHash(12, sizes)
         orig_ht.set_use_bigcount(True)
@@ -396,7 +396,7 @@ def test_save_load_bigcount():
 
         assert loaded_ht.ksize() == 12
         assert loaded_ht.get(kmer) == 257
-        assert loaded_ht.get_use_bigcount() == True
+        assert loaded_ht.get_use_bigcount() is True
 
     for ext in ['', '.gz', '.zstd']:
         _do_c_h_consume_save_load_bigcount('temp_ht_' + ext)
@@ -406,7 +406,7 @@ def test_zstd_save_tiny_table():
     """test zstd save with tiny table created"""
     savepath = utils.get_temp_filename("test.kh.zstd")
 
-    ht = khmer.CountingHash(1, [1,])
+    ht = khmer.CountingHash(1, [1, ])
     with assert_raises(IOError) as ar:
         ht.save(savepath)
     assert "ZSTD_ERROR" in str(ar.exception), str(ar.exception)
@@ -425,6 +425,7 @@ def test_zstd_load_unzipped_table():
         khmer.load_counting_hash(zstd_path)
     err_msg = str(ar.exception)
     assert expected_err_msg in err_msg, err_msg
+
 
 def test_zstd_load_nonexistant():
     """test loading a nonexistant table with .zstd extension"""
