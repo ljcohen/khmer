@@ -2611,7 +2611,7 @@ def test_count_overlap_invalid_datafile():
     args = ['--ksize', '20', '--n_tables', '2', '--min-tablesize', '10000000',
             htfile + '.pt', htfile + '.pt', outfile]
     (status, out, err) = utils.runscript(script, args, in_dir, fail_ok=True)
-    assert "IOError" in err
+    assert "OSError" in err
 
 
 def test_count_overlap():

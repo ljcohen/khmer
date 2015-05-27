@@ -671,7 +671,7 @@ def test_load_notexist_should_fail():
     try:
         hi.load(savepath)
         assert 0, "load should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -695,7 +695,7 @@ def test_load_truncated_should_fail():
     try:
         hi.load(savepath)
         assert 0, "load should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -706,7 +706,7 @@ def test_load_gz_notexist_should_fail():
     try:
         hi.load(savepath)
         assert 0, "load should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -730,7 +730,7 @@ def test_load_gz_truncated_should_fail():
     try:
         hi.load(savepath)
         assert 0, "load should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -742,7 +742,7 @@ def test_counting_file_version_check():
     try:
         ht.load(inpath)
         assert 0, "this should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -754,7 +754,7 @@ def test_counting_gz_file_version_check():
     try:
         ht.load(inpath)
         assert 0, "this should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -766,7 +766,7 @@ def test_counting_file_type_check():
     try:
         kh.load(inpath)
         assert 0, "this should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -780,7 +780,7 @@ def test_counting_gz_file_type_check():
     try:
         kh.load(inpath)
         assert 0, "this should fail"
-    except IOError as e:
+    except OSError as e:
         print str(e)
 
 
@@ -808,7 +808,7 @@ def test_consume_absentfasta():
     try:
         countingtable.consume_fasta("absent_file.fa")
         assert 0, "This should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -823,7 +823,7 @@ def test_consume_absentfasta_with_reads_parser():
         readparser = ReadParser(utils.get_test_data('empty-file'))
         countingtable.consume_fasta_with_reads_parser(readparser)
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
     except ValueError as err:
         print str(err)

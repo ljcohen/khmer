@@ -85,7 +85,7 @@ def test_num_reads_truncated():
     try:
         for read in rparser:
             n_reads += 1
-    except IOError as err:
+    except ValueError as err:
         assert "Sequence is empty" in str(err), str(err)
     assert rparser.num_reads == 1, "%d valid reads in file, got %d" % (
         n_reads, rparser.num_reads)
@@ -107,7 +107,7 @@ def test_gzip_decompression_truncated():
         for read in rparser:
             pass
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -118,7 +118,7 @@ def test_gzip_decompression_truncated_pairiter():
         for read in rparser.iter_read_pairs():
             pass
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -139,7 +139,7 @@ def test_bzip2_decompression_truncated():
         for read in rparser:
             pass
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -150,7 +150,7 @@ def test_bzip2_decompression_truncated_pairiter():
         for read in rparser.iter_read_pairs():
             pass
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -160,7 +160,7 @@ def test_badbzip2():
         for read in rparser:
             pass
         assert 0, "this should fail"
-    except IOError as err:
+    except OSError as err:
         print str(err)
     except ValueError as err:
         print str(err)
@@ -267,7 +267,7 @@ def test_read_truncated():
         for read in rparser:
             pass
         assert 0, "No exception raised on a truncated file"
-    except IOError as err:
+    except ValueError as err:
         assert "Sequence is empty" in str(err), str(err)
 
 
@@ -325,8 +325,8 @@ def test_read_pair_iterator_in_error_mode_xfail():
         for rpair in rparser.iter_read_pairs():
             pass
         failed = False
-    except IOError as exc:
-        pass
+    except ValueError as exc:
+        assert "Invalid read pair detected" in str(exc), str(exc)
     assert failed
 
 
@@ -357,7 +357,7 @@ def test_constructor():
     try:
         rparser = ReadParser("non-existent-file-name")
         assert 0, "ReadParser shouldn't accept a non-existant file name"
-    except ValueError as err:
+    except OSError as err:
         print str(err)
 
 
@@ -368,7 +368,7 @@ def test_iternext():
         for read_1, read_2 in rparser.iter_read_pairs():
             read_pairs.append(read_1, read_2)
         assert 0, "Shouldn't be able to iterate over non FASTA file"
-    except IOError as err:
+    except OSError as err:
         print str(err)
     except ValueError as err:
         print str(err)

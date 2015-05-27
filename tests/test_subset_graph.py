@@ -267,7 +267,7 @@ class Test_SaveLoadPmap(object):
         try:
             a = ht.load_subset_partitionmap('this does not exist')
             assert 0, "this should not succeed"
-        except IOError as e:
+        except OSError as e:
             print str(e)
 
     def test_save_merge_from_disk(self):
@@ -348,7 +348,7 @@ class Test_SaveLoadPmap(object):
         try:
             ht.merge_subset_from_disk(outfile1)
             assert 0, "this should fail"
-        except IOError as e:
+        except OSError as e:
             print str(e)
 
     def test_merge_from_disk_file_bad_type(self):
@@ -358,7 +358,7 @@ class Test_SaveLoadPmap(object):
         try:
             ht.merge_subset_from_disk(infile)
             assert 0, "this should fail"
-        except IOError as e:
+        except OSError as e:
             print str(e)
 
     def test_merge_from_disk_file_version(self):
@@ -368,7 +368,7 @@ class Test_SaveLoadPmap(object):
         try:
             ht.merge_subset_from_disk(infile)
             assert 0, "this should fail"
-        except IOError as e:
+        except OSError as e:
             print str(e)
 
     def test_save_merge_from_disk_ksize(self):
@@ -392,7 +392,7 @@ class Test_SaveLoadPmap(object):
         try:
             ht.merge_subset_from_disk(outfile1)
             assert 0, "this should fail"
-        except IOError as e:
+        except OSError as e:
             print str(e)
 
 
