@@ -1835,7 +1835,7 @@ hash_abundance_distribution(khmer_KCountingHash_Object * me, PyObject * args)
     }
 
     Hashbits           *hashbits        = tracking_obj->hashbits;
-    HashIntoType       *dist;
+    HashIntoType       *dist            = NULL;
     const char         *value_exception = NULL;
     const char         *file_exception  = NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -1850,23 +1850,33 @@ hash_abundance_distribution(khmer_KCountingHash_Object * me, PyObject * args)
 
     if (file_exception != NULL) {
         PyErr_SetString(PyExc_OSError, file_exception);
+        if (dist != NULL) {
+            delete []dist;
+        }
         return NULL;
     }
     if (value_exception != NULL) {
         PyErr_SetString(PyExc_ValueError, value_exception);
+        if (dist != NULL) {
+            delete []dist;
+        }
         return NULL;
     }
 
     PyObject * x = PyList_New(MAX_BIGCOUNT + 1);
     if (x == NULL) {
-        delete[] dist;
+        if (dist != NULL) {
+            delete []dist;
+        }
         return NULL;
     }
     for (int i = 0; i < MAX_BIGCOUNT + 1; i++) {
         PyList_SET_ITEM(x, i, PyLong_FromUnsignedLongLong(dist[i]));
     }
 
-    delete[] dist;
+    if (dist != NULL) {
+        delete []dist;
+    }
 
     return x;
 }
