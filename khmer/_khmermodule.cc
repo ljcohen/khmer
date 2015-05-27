@@ -1268,7 +1268,7 @@ hash_load(khmer_KCountingHash_Object * me, PyObject * args)
     try {
         counting->load(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -1290,7 +1290,7 @@ hash_save(khmer_KCountingHash_Object * me, PyObject * args)
     try {
         counting->save(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -2072,7 +2072,7 @@ hashbits_load_stop_tags(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->load_stop_tags(filename, clear_tags);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -2095,7 +2095,7 @@ hashbits_save_stop_tags(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->save_stop_tags(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -2391,7 +2391,7 @@ hashbits_merge_from_disk(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->partition->merge_from_disk(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -2421,7 +2421,7 @@ hashbits_consume_fasta(khmer_KHashbits_Object * me, PyObject * args)
         PyErr_SetString(PyExc_IOError, e.get_message().c_str());
         return NULL;
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -2910,7 +2910,7 @@ hashbits_save_partitionmap(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->partition->save_partitionmap(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3046,7 +3046,7 @@ hashbits_load(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->load(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3068,7 +3068,7 @@ hashbits_save(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->save(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3096,7 +3096,7 @@ hashbits_load_tagset(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->load_tagset(filename, clear_tags);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3118,7 +3118,7 @@ hashbits_save_tagset(khmer_KHashbits_Object * me, PyObject * args)
     try {
         hashbits->save_tagset(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3144,7 +3144,7 @@ hashbits_save_subset_partitionmap(khmer_KHashbits_Object * me, PyObject * args)
     try {
         subset_p->save_partitionmap(filename);
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
@@ -3172,27 +3172,22 @@ hashbits_load_subset_partitionmap(khmer_KHashbits_Object * me, PyObject * args)
         return PyErr_NoMemory();
     }
 
-    bool fail = false;
-    std::string err;
+    const char         *file_exception  = NULL;
 
     Py_BEGIN_ALLOW_THREADS
-
     try {
         subset_p->load_partitionmap(filename);
-    } catch (khmer_file_exception &e) {
-        fail = true;
-        err = e.what();
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
     }
-
     Py_END_ALLOW_THREADS
 
-    if (fail) {
-        PyErr_SetString(PyExc_IOError, err.c_str());
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
         delete subset_p;
         return NULL;
-    } else {
-        return PyCObject_FromVoidPtr(subset_p, free_subset_partition_info);
     }
+    return PyCObject_FromVoidPtr(subset_p, free_subset_partition_info);
 }
 
 static
@@ -4562,7 +4557,7 @@ static PyObject * hllcounter_consume_fasta(khmer_KHLLCounter_Object * me,
         PyErr_SetString(PyExc_IOError, e.get_message().c_str());
         return NULL;
     } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+        PyErr_SetString(PyExc_OSError, e.what());
         return NULL;
     }
 
