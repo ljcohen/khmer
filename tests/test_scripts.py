@@ -782,7 +782,7 @@ def test_normalize_by_median_force():
     assert test_ht.count(test_good_read2[:17]) > 0
     assert os.path.exists(corrupt_infile + '.ct.failed')
     assert '*** Skipping' in err
-    assert '** IOErrors' in err
+    assert '** I/O Errors' in err, err
 
 
 def test_normalize_by_median_no_bigcount():

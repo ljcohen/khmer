@@ -357,7 +357,7 @@ file for one of the input files will be generated.)" % filename
 
     if args.force and len(corrupt_files) > 0:
         print >> sys.stderr, "** WARNING: Finished with errors!"
-        print >> sys.stderr, "** IOErrors occurred in the following files:"
+        print >> sys.stderr, "** I/O Errors occurred in the following files:"
         print >> sys.stderr, "\t", " ".join(corrupt_files)
 
 if __name__ == '__main__':
