@@ -300,8 +300,8 @@ _ReadParser_new( PyTypeObject * subtype, PyObject * args, PyObject * kwds )
     try {
         myself->parser =
             IParser:: get_parser( ifile_name );
-    } catch (InvalidStreamHandle &exc) {
-        PyErr_SetString( PyExc_ValueError, exc.what() );
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString( PyExc_OSError, exc.what() );
         return NULL;
     }
     return self;
@@ -315,12 +315,13 @@ _ReadParser_iternext( PyObject * self )
     khmer_ReadParser_Object * myself  = (khmer_ReadParser_Object *)self;
     IParser *       parser  = myself->parser;
 
-    bool    stop_iteration = false;
-    char    const * exc = NULL;
-    Read *  the_read_PTR;
+    bool        stop_iteration  = false;
+    const char *value_exception = NULL;
+    const char *file_exception  = NULL;
+    Read       *the_read_PTR    = NULL;
     try {
         the_read_PTR = new Read( );
-    } catch (std::bad_alloc &e) {
+    } catch (std::bad_alloc &exc) {
         return PyErr_NoMemory();
     }
 
@@ -329,12 +330,12 @@ _ReadParser_iternext( PyObject * self )
     if (!stop_iteration) {
         try {
             parser->imprint_next_read( *the_read_PTR );
-        } catch (NoMoreReadsAvailable &e) {
+        } catch (NoMoreReadsAvailable &exc) {
             stop_iteration = true;
-        } catch (StreamReadError &e) {
-            exc = e.what();
-        } catch (InvalidRead &e) {
-            exc = e.what();
+        } catch (khmer_file_exception &exc) {
+            file_exception = exc.what();
+        } catch (khmer_value_exception &exc) {
+            value_exception = exc.what();
         }
     }
     Py_END_ALLOW_THREADS
@@ -346,9 +347,14 @@ _ReadParser_iternext( PyObject * self )
         return NULL;
     }
 
-    if (exc != NULL) {
+    if (file_exception != NULL) {
         delete the_read_PTR;
-        PyErr_SetString(PyExc_IOError, exc);
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        delete the_read_PTR;
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -363,29 +369,25 @@ PyObject *
 _ReadPairIterator_iternext(khmer_ReadPairIterator_Object * myself)
 {
     khmer_ReadParser_Object * parent = (khmer_ReadParser_Object*)myself->parent;
-    IParser *           parser    = parent->parser;
-    uint8_t         pair_mode = myself->pair_mode;
+    IParser    *parser    = parent->parser;
+    uint8_t     pair_mode = myself->pair_mode;
 
     ReadPair    the_read_pair;
-    bool    stop_iteration      = false;
-    const char * value_error_what = NULL;
-    const char * io_error_what = NULL;
+    bool        stop_iteration  = false;
+    const char *value_exception = NULL;
+    const char *file_exception  = NULL;
 
     Py_BEGIN_ALLOW_THREADS
     stop_iteration = parser->is_complete( );
     if (!stop_iteration)
         try {
             parser->imprint_next_read_pair( the_read_pair, pair_mode );
-        } catch (UnknownPairReadingMode &exc) {
-            value_error_what = exc.what();
-        } catch (InvalidRead &exc) {
-            io_error_what = exc.what();
-        } catch (InvalidReadPair &exc) {
-            io_error_what = exc.what();
-        } catch (StreamReadError &exc) {
-            io_error_what = "Input file error.";
         } catch (NoMoreReadsAvailable &exc) {
             stop_iteration = true;
+        } catch (khmer_file_exception &exc) {
+            file_exception = exc.what();
+        } catch (khmer_value_exception &exc) {
+            value_exception = exc.what();
         }
     Py_END_ALLOW_THREADS
 
@@ -393,12 +395,12 @@ _ReadPairIterator_iternext(khmer_ReadPairIterator_Object * myself)
     if (stop_iteration) {
         return NULL;
     }
-    if (value_error_what != NULL) {
-        PyErr_SetString(PyExc_ValueError, value_error_what);
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
         return NULL;
     }
-    if (io_error_what != NULL) {
-        PyErr_SetString( PyExc_IOError, io_error_what);
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -850,8 +852,11 @@ hash_consume_fasta(khmer_KCountingHash_Object * me, PyObject * args)
     } catch (_khmer_signal &e) {
         PyErr_SetString(PyExc_IOError, e.get_message().c_str());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -874,27 +879,28 @@ hash_consume_fasta_with_reads_parser(khmer_KCountingHash_Object * me,
     read_parsers:: IParser * rparser =
         _PyObject_to_khmer_ReadParser( rparser_obj );
 
-    char const * exc = "";
     // call the C++ function, and trap signals => Python
-    unsigned long long  n_consumed  = 0;
-    unsigned int    total_reads = 0;
-    bool        exc_raised  = false;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
+    unsigned long long  n_consumed      = 0;
+    unsigned int        total_reads     = 0;
+
     Py_BEGIN_ALLOW_THREADS
     try {
         counting->consume_fasta(rparser, total_reads, n_consumed);
-    } catch (StreamReadError &e) {
-        exc = e.what();
-        exc_raised = true;
-    } catch (InvalidRead &e) {
-        exc = e.what();
-        exc_raised = true;
-    } catch (_khmer_signal &e) {
-        exc = e.get_message().c_str();
-        exc_raised = true;
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
     }
     Py_END_ALLOW_THREADS
-    if (exc_raised) {
-        PyErr_SetString(PyExc_IOError, exc);
+
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -1188,8 +1194,17 @@ hash_fasta_count_kmers_by_position(khmer_KCountingHash_Object * me,
     max_read_len = (unsigned int) max_read_len_long;
 
     unsigned long long * counts;
-    counts = counting->fasta_count_kmers_by_position(inputfile, max_read_len,
-             (unsigned short) limit_by_count_int);
+    try {
+        counts = counting->fasta_count_kmers_by_position(inputfile,
+                                                         max_read_len,
+                                        (unsigned short) limit_by_count_int);
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
+        return NULL;
+    }
 
     PyObject * x = PyList_New(max_read_len);
     if (x == NULL) {
@@ -1224,8 +1239,16 @@ hash_fasta_dump_kmers_by_abundance(khmer_KCountingHash_Object * me,
         return NULL;
     }
 
-    counting->fasta_dump_kmers_by_abundance(inputfile,
-                                            limit_by);
+    try {
+        counting->fasta_dump_kmers_by_abundance(inputfile,
+                                                limit_by);
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -1443,8 +1466,11 @@ hash_consume_fasta_and_tag(khmer_KCountingHash_Object * me, PyObject * args)
 
     try {
         counting->consume_fasta_and_tag(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -1757,14 +1783,30 @@ hash_abundance_distribution_with_reads_parser(khmer_KCountingHash_Object * me,
         return NULL;
     }
 
-    read_parsers:: IParser * rparser = rparser_obj->parser;
-    Hashbits * hashbits = tracking_obj->hashbits;
-
-    HashIntoType * dist = NULL;
+    read_parsers::IParser *rparser      = rparser_obj->parser;
+    Hashbits           *hashbits        = tracking_obj->hashbits;
+    HashIntoType       *dist            = NULL;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    dist = counting->abundance_distribution(rparser, hashbits);
+    try {
+        dist = counting->abundance_distribution(rparser, hashbits);
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
+    }
     Py_END_ALLOW_THREADS
+
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
+        return NULL;
+    }
 
     PyObject * x = PyList_New(MAX_BIGCOUNT + 1);
     if (x == NULL) {
@@ -1792,22 +1834,26 @@ hash_abundance_distribution(khmer_KCountingHash_Object * me, PyObject * args)
         return NULL;
     }
 
-    Hashbits * hashbits = tracking_obj->hashbits;
-    HashIntoType * dist;
-
-    char const * result = "";
-    bool exception = false;
+    Hashbits           *hashbits        = tracking_obj->hashbits;
+    HashIntoType       *dist;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
     Py_BEGIN_ALLOW_THREADS
     try {
         dist = counting->abundance_distribution(filename, hashbits);
-    } catch (khmer_file_exception &e) {
-        exception = true;
-        result = e.what();
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
     }
     Py_END_ALLOW_THREADS
 
-    if (exception) {
-        PyErr_SetString(PyExc_IOError, result);
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -1853,21 +1899,21 @@ hashbits_count_overlap(khmer_KHashbits_Object * me, PyObject * args)
 
     ht2 = ht2_argu->hashbits;
 
-// call the C++ function, and trap signals => Python
-
-    unsigned long long n_consumed;
-    unsigned int total_reads;
-    HashIntoType curve[2][100];
+    // call the C++ function, and trap signals => Python
+    unsigned long long  n_consumed;
+    unsigned int        total_reads;
+    HashIntoType        curve[2][100];
 
     try {
-        hashbits->consume_fasta_overlap(filename, curve, *ht2, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+        hashbits->consume_fasta_overlap(filename, curve, *ht2, total_reads,
+                                        n_consumed);
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (InvalidStreamHandle &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
-    } 
+    }
 
     HashIntoType n = hashbits->n_unique_kmers();
     HashIntoType n_overlap = hashbits->n_overlap_kmers();
@@ -2389,20 +2435,28 @@ hashbits_consume_fasta_with_reads_parser(khmer_KHashbits_Object * me,
     read_parsers:: IParser * rparser =
         _PyObject_to_khmer_ReadParser( rparser_obj );
 
-// call the C++ function, and trap signals => Python
-    unsigned long long  n_consumed  = 0;
-    unsigned int          total_reads = 0;
-    char const * exc = NULL;
+    // call the C++ function, and trap signals => Python
+    unsigned long long  n_consumed      = 0;
+    unsigned int        total_reads     = 0;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
+
     Py_BEGIN_ALLOW_THREADS
     try {
         hashbits->consume_fasta(rparser, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        exc = e.get_message().c_str();
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
     }
-
     Py_END_ALLOW_THREADS
-    if (exc != NULL) {
-        PyErr_SetString(PyExc_IOError, exc);
+
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -2428,9 +2482,16 @@ hashbits_consume_fasta_and_traverse(khmer_KHashbits_Object * me,
 
     CountingHash * counting = counting_o->counting;
 
-    hashbits->consume_fasta_and_traverse(filename, radius, big_threshold,
-                                         transfer_threshold, *counting);
-
+    try {
+        hashbits->consume_fasta_and_traverse(filename, radius, big_threshold,
+                                             transfer_threshold, *counting);
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -2459,11 +2520,12 @@ hashbits_consume_fasta_and_tag(khmer_KHashbits_Object * me, PyObject * args)
 
     try {
         hashbits->consume_fasta_and_tag(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -2487,22 +2549,27 @@ hashbits_consume_fasta_and_tag_with_reads_parser(khmer_KHashbits_Object * me,
     read_parsers:: IParser * rparser = rparser_obj-> parser;
 
     // call the C++ function, and trap signals => Python
-    unsigned long long  n_consumed  = 0;
-    unsigned int          total_reads = 0;
-    char const * exc = NULL;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
+    unsigned long long  n_consumed      = 0;
+    unsigned int        total_reads     = 0;
+
     Py_BEGIN_ALLOW_THREADS
     try {
-        hashbits->consume_fasta_and_tag(
-            rparser, total_reads, n_consumed
-        );
-    } catch (_khmer_signal &e) {
-        exc = e.get_message().c_str();
-    } catch (khmer::read_parsers::NoMoreReadsAvailable &e) {
-        exc = e.what();
+        hashbits->consume_fasta_and_tag(rparser, total_reads, n_consumed);
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
     }
     Py_END_ALLOW_THREADS
-    if (exc != NULL) {
-        PyErr_SetString(PyExc_IOError, exc);
+
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
@@ -2524,17 +2591,16 @@ hashbits_consume_fasta_and_tag_with_stoptags(khmer_KHashbits_Object * me,
 
     // call the C++ function, and trap signals => Python
 
-    unsigned long long n_consumed;
-    unsigned int total_reads;
-
+    unsigned long long  n_consumed;
+    unsigned int        total_reads;
     try {
         hashbits->consume_fasta_and_tag_with_stoptags(filename,
                 total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -2560,11 +2626,11 @@ hashbits_consume_partitioned_fasta(khmer_KHashbits_Object * me, PyObject * args)
 
     try {
         hashbits->consume_partitioned_fasta(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -2745,11 +2811,11 @@ hashbits_output_partitions(khmer_KHashbits_Object * me, PyObject * args)
         n_partitions = subset_p->output_partitioned_file(filename,
                        output,
                        output_unassigned);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -2779,7 +2845,11 @@ hashbits_find_unpart(khmer_KHashbits_Object * me, PyObject * args)
         SubsetPartition * subset_p = hashbits->partition;
         n_singletons = subset_p->find_unpart(filename, traverse,
                                              stop_big_traversals);
-    } catch (_khmer_signal &e) {
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -2804,7 +2874,11 @@ hashbits_filter_if_present(khmer_KHashbits_Object * me, PyObject * args)
 
     try {
         hashbits->filter_if_present(filename, output);
-    } catch (_khmer_signal &e) {
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -3857,26 +3931,31 @@ labelhash_consume_fasta_and_tag_with_labels(khmer_KLabelHash_Object * me,
         return NULL;
     }
 
-    unsigned long long n_consumed;
-    unsigned int total_reads;
-    char const * exc = NULL;
+    const char         *value_exception = NULL;
+    const char         *file_exception  = NULL;
+    unsigned long long  n_consumed      = 0;
+    unsigned int        total_reads     = 0;
     //Py_BEGIN_ALLOW_THREADS
     try {
         hb->consume_fasta_and_tag_with_labels(filename, total_reads,
                                               n_consumed);
-    } catch (_khmer_signal &e) {
-        exc = e.get_message().c_str();
-    } catch (khmer_file_exception &e) {
-        exc = e.what();
+    } catch (khmer_file_exception &exc) {
+        file_exception = exc.what();
+    } catch (khmer_value_exception &exc) {
+        value_exception = exc.what();
     }
     //Py_END_ALLOW_THREADS
-    if (exc != NULL) {
-        PyErr_SetString(PyExc_IOError, exc);
+
+    if (file_exception != NULL) {
+        PyErr_SetString(PyExc_OSError, file_exception);
+        return NULL;
+    }
+    if (value_exception != NULL) {
+        PyErr_SetString(PyExc_ValueError, value_exception);
         return NULL;
     }
 
     return Py_BuildValue("IK", total_reads, n_consumed);
-
 }
 
 static
@@ -3894,20 +3973,20 @@ labelhash_consume_partitioned_fasta_and_tag_with_labels(
 
     // call the C++ function, and trap signals => Python
 
-    unsigned long long n_consumed;
-    unsigned int total_reads;
+    unsigned long long  n_consumed  = 0;
+    unsigned int        total_reads = 0;
 
     try {
         labelhash->consume_partitioned_fasta_and_tag_with_labels(filename,
                 total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError,
-                        "error parsing in consume_partitioned_fasta_and_tag_with_labels");
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_IOError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
+
     return Py_BuildValue("IK", total_reads, n_consumed);
 }
 
@@ -4286,8 +4365,16 @@ static PyObject * hash_collect_high_abundance_kmers(khmer_KCountingHash_Object *
     }
 
     SeenSet found_kmers;
-    counting->collect_high_abundance_kmers(filename, lower_count, upper_count,
-                                           found_kmers);
+    try {
+        counting->collect_high_abundance_kmers(filename, lower_count,
+                                               upper_count, found_kmers);
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
+        return NULL;
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
+        return NULL;
+    }
 
     // create a new hashbits object...
     std::vector<HashIntoType> sizes;
