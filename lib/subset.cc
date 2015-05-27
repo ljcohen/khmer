@@ -98,7 +98,12 @@ size_t SubsetPartition::output_partitioned_file(
     //
 
     while(!parser->is_complete()) {
-        read = parser->get_next_read();
+        try {
+            read = parser->get_next_read();
+        } catch (NoMoreReadsAvailable &exc) {
+            break;
+        }
+
         seq = read.sequence;
 
         if (_ht->check_and_normalize_read(seq)) {
@@ -204,7 +209,11 @@ unsigned int SubsetPartition::find_unpart(
     //
 
     while(!parser->is_complete()) {
-        read = parser->get_next_read();
+        try {
+            read = parser->get_next_read();
+        } catch (NoMoreReadsAvailable &exc) {
+            break;
+        }
         seq = read.sequence;
 
         if (_ht->check_and_normalize_read(seq)) {
