@@ -120,6 +120,8 @@ def test_gzip_decompression_truncated_pairiter():
         assert 0, "this should fail"
     except OSError as err:
         print str(err)
+    except ValueError as err:
+        print str(err)
 
 
 def test_bzip2_decompression():
@@ -141,6 +143,8 @@ def test_bzip2_decompression_truncated():
         assert 0, "this should fail"
     except OSError as err:
         print str(err)
+    except ValueError as err:
+        print str(err)
 
 
 def test_bzip2_decompression_truncated_pairiter():
@@ -151,6 +155,8 @@ def test_bzip2_decompression_truncated_pairiter():
             pass
         assert 0, "this should fail"
     except OSError as err:
+        print str(err)
+    except ValueError as err:
         print str(err)
 
 
