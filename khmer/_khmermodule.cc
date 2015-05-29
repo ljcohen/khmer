@@ -92,24 +92,6 @@ static void     _trace_logger(
 } // namespace khmer
 
 
-class _khmer_exception
-{
-private:
-    std::string _message;
-public:
-    _khmer_exception(std::string message) : _message(message) { };
-    inline const std::string get_message() const
-    {
-        return _message;
-    };
-};
-
-class _khmer_signal : public _khmer_exception
-{
-public:
-    _khmer_signal(std::string message) : _khmer_exception(message) { };
-};
-
 typedef pre_partition_info _pre_partition_info;
 
 /***********************************************************************/
@@ -849,9 +831,6 @@ hash_consume_fasta(khmer_KCountingHash_Object * me, PyObject * args)
     unsigned int          total_reads   = 0;
     try {
         counting->consume_fasta(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
-        return NULL;
     } catch (khmer_file_exception &exc) {
         PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
@@ -1353,13 +1332,8 @@ hash_consume_and_tag(khmer_KCountingHash_Object * me, PyObject * args)
     // call the C++ function, and trap signals => Python
 
     unsigned long long n_consumed = 0;
-    try {
-        // @CTB needs to normalize
-        counting->consume_sequence_and_tag(seq, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_ValueError, e.get_message().c_str());
-        return NULL;
-    }
+    // @CTB needs to normalize
+    counting->consume_sequence_and_tag(seq, n_consumed);
 
     return Py_BuildValue("K", n_consumed);
 }
@@ -1515,8 +1489,6 @@ hash_do_subset_partition_with_abundance(khmer_KCountingHash_Object * me,
                                               break_on_stop_tags,
                                               stop_big_traversals);
         Py_END_ALLOW_THREADS
-    } catch (_khmer_signal &e) {
-        return NULL;
     } catch (std::bad_alloc &e) {
         return PyErr_NoMemory();
     }
@@ -2328,8 +2300,6 @@ hashbits_do_subset_partition(khmer_KHashbits_Object * me, PyObject * args)
         subset_p->do_partition(start_kmer, end_kmer, break_on_stop_tags,
                                stop_big_traversals);
         Py_END_ALLOW_THREADS
-    } catch (_khmer_signal &e) {
-        return NULL;
     } catch (std::bad_alloc &e) {
         return PyErr_NoMemory();
     }
@@ -2417,11 +2387,11 @@ hashbits_consume_fasta(khmer_KHashbits_Object * me, PyObject * args)
 
     try {
         hashbits->consume_fasta(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_OSError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
@@ -4009,11 +3979,7 @@ labelhash_consume_sequence_and_tag_with_labels(khmer_KLabelHash_Object * me,
     unsigned long long n_consumed = 0;
     Label * the_label = hb->check_and_allocate_label(c);
 
-    try {
-        hb->consume_sequence_and_tag_with_labels(seq, n_consumed, *the_label);
-    } catch (_khmer_signal &e) {
-        return NULL;
-    }
+    hb->consume_sequence_and_tag_with_labels(seq, n_consumed, *the_label);
     return Py_BuildValue("K", n_consumed);
 }
 
@@ -4058,22 +4024,13 @@ labelhash_sweep_label_neighborhood(khmer_KLabelHash_Object * me,
     //std::pair<TagLabelPtrPair::iterator, TagLabelPtrPair::iterator> ret;
     LabelPtrSet found_labels;
 
-    bool exc_raised = false;
     //unsigned int num_traversed = 0;
     //Py_BEGIN_ALLOW_THREADS
-    try {
-        hb->sweep_label_neighborhood(seq, found_labels, range, break_on_stop_tags,
-                                     stop_big_traversals);
-    } catch (_khmer_signal &e) {
-        exc_raised = true;
-    }
+    hb->sweep_label_neighborhood(seq, found_labels, range, break_on_stop_tags,
+                                 stop_big_traversals);
     //Py_END_ALLOW_THREADS
 
     //printf("...%u kmers traversed\n", num_traversed);
-
-    if (exc_raised) {
-        return NULL;
-    }
 
     PyObject * x =  PyList_New(found_labels.size());
     LabelPtrSet::const_iterator si;
@@ -4553,11 +4510,11 @@ static PyObject * hllcounter_consume_fasta(khmer_KHLLCounter_Object * me,
     unsigned int        total_reads   = 0;
     try {
         me->hllcounter->consume_fasta(filename, total_reads, n_consumed);
-    } catch (_khmer_signal &e) {
-        PyErr_SetString(PyExc_IOError, e.get_message().c_str());
+    } catch (khmer_file_exception &exc) {
+        PyErr_SetString(PyExc_OSError, exc.what());
         return NULL;
-    } catch (khmer_file_exception &e) {
-        PyErr_SetString(PyExc_OSError, e.what());
+    } catch (khmer_value_exception &exc) {
+        PyErr_SetString(PyExc_ValueError, exc.what());
         return NULL;
     }
 
