@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+q! /usr/bin/env python2
 #
 # This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2009-2015. It is licensed under
@@ -110,7 +110,7 @@ def main():
         if counter % 100000 == 0:
             print >> sys.stderr, '...', counter, 'pairs'
         counter += 1
-
+#Check spaces in the FQ header that miss up the naming. 
         name1 = read1.name
         if not check_is_left(name1):
             name1 += '/1'
