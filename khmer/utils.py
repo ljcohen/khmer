@@ -1,3 +1,4 @@
+from __future__ import print_function, unicode_literals
 #
 # This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2009-2015. It is licensed under
@@ -12,7 +13,7 @@ def print_error(msg):
     """Print the given message to 'stderr'."""
     import sys
 
-    print >>sys.stderr, msg
+    print(msg, file=sys.stderr)
 
 
 def _split_left_right(name):
@@ -42,17 +43,17 @@ def check_is_pair(record1, record2):
     lhs2, rhs2 = _split_left_right(record2.name)
 
     # handle 'name/1'
-    if lhs1 == lhs2 and rhs1.endswith('/1') and rhs2.endswith('/2'):
+    if lhs1.endswith('/1') and lhs2.endswith('/2'):
+        subpart1 = lhs1.split('/', 1)[0]
+        subpart2 = lhs2.split('/', 1)[0]
+
+        assert subpart1
+        if subpart1 == subpart2:
             return True
 
     # handle '@name 1:rst'
-    elif lhs1.startswith('1:') and lhs2.startswith('2:'):
-        subpart1 = rhs1.split('/', 1)[0]
-        subpart2 = rhs2.split('/', 1)[0]
-
-        assert subpart1
-        if subpart1 == subpart2: 
-	     return True
+    elif lhs1 == lhs2 and rhs1.startswith('1:') and rhs2.startswith('2:'):
+        return True
 
     return False
 
@@ -65,9 +66,9 @@ def check_is_left(name):
     Handles both Casava formats: seq/1 and 'seq::... 1::...'
     """
     lhs, rhs = _split_left_right(name)
-    if rhs.endswith('/1'):              # handle 'name/1'
+    if lhs.endswith('/1'):              # handle 'name/1'
         return True
-    elif lhs.startswith('1:'):          # handle '@name 1:rst'
+    elif rhs.startswith('1:'):          # handle '@name 1:rst'
         return True
 
     return False
@@ -81,9 +82,9 @@ def check_is_right(name):
     Handles both Casava formats: seq/2 and 'seq::... 2::...'
     """
     lhs, rhs = _split_left_right(name)
-    if rhs.endswith('/2'):              # handle 'name/2'
+    if lhs.endswith('/2'):              # handle 'name/2'
         return True
-    elif lhs.startswith('2:'):          # handle '@name 2:rst'
+    elif rhs.startswith('2:'):          # handle '@name 2:rst'
         return True
 
     return False
@@ -153,15 +154,19 @@ def broken_paired_reader(screed_iter, min_length=None,
 def write_record(record, fileobj):
     """Write sequence record to 'fileobj' in FASTA/FASTQ format."""
     if hasattr(record, 'quality'):
-        fileobj.write(
-            '@{name}\n{seq}\n'
-            '+\n{qual}\n'.format(name=record.name,
-                                 seq=record.sequence,
-                                 qual=record.quality))
+        recstr = '@{name}\n{sequence}\n+\n{quality}\n'.format(
+            name=record.name,
+            sequence=record.sequence,
+            quality=record.quality)
     else:
-        fileobj.write(
-            '>{name}\n{seq}\n'.format(name=record.name,
-                                      seq=record.sequence))
+        recstr = '>{name}\n{sequence}\n'.format(
+            name=record.name,
+            sequence=record.sequence)
+
+    try:
+        fileobj.write(bytes(recstr, 'utf-8'))
+    except TypeError:
+        fileobj.write(recstr)
 
 
 def write_record_pair(read1, read2, fileobj):
