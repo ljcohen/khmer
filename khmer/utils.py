@@ -55,11 +55,11 @@ def check_is_pair(record1, record2):
     elif lhs1 == lhs2 and rhs1.startswith('1:') and rhs2.startswith('2:'):
         return True
 
-    # handle @name seq/1 
+    # handle @name seq/1
     elif lhs1 == lhs2 and rhs1.endswith('/1') and rhs2.endswith('/2'):
         return True
 
-    return False 
+    return False
 
 
 def check_is_left(name):
@@ -74,9 +74,9 @@ def check_is_left(name):
         return True
     elif rhs.startswith('1:'):          # handle '@name 1:rst'
         return True
-     
-    elif rhs.endswith('/1'):            #handles '@name seq/1'
-	return True
+
+    elif rhs.endswith('/1'):            # handles '@name seq/1'
+        return True
 
     return False
 
@@ -84,9 +84,9 @@ def check_is_left(name):
 def check_is_right(name):
     """Check if the name belongs to a 'right' sequence (/2).
 
-    Returns True or False.
+        Returns True or False.
 
-    Handles both Casava formats: seq/2 and 'seq::... 2::...'
+        Handles both Casava formats: seq/2 and 'seq::... 2::...'
     """
     lhs, rhs = _split_left_right(name)
     if lhs.endswith('/2'):              # handle 'name/2'
@@ -94,9 +94,9 @@ def check_is_right(name):
     elif rhs.startswith('2:'):          # handle '@name 2:rst'
         return True
 
-    elif rhs.endswith('/2'):            #handles '@name seq/2'
+    elif rhs.endswith('/2'):            # handles '@name seq/2'
         return True
-    
+
     return False
 
 
