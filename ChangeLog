@@ -1,6 +1,8 @@
 2015-06-12  Sherine Awad  <drmahmoud@ucdavis.edu>
 
    * Fix bug in naming in interleave-reads.py 
+   * Add a test function for the new behavior 
+   * Add 3 test files needed for the testing
 
 2015-06-12  Michael R. Crusoe  <crusoe@ucdavis.edu>
 
