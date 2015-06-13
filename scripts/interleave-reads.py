@@ -32,7 +32,6 @@ from khmer.khmer_args import info
 from khmer.utils import (write_record_pair, check_is_left, check_is_right,
                          check_is_pair)
 
-
 def get_parser():
     epilog = """
     The output is an interleaved set of reads, with each read in <R1> paired
@@ -110,15 +109,14 @@ def main():
         if counter % 100000 == 0:
             print >> sys.stderr, '...', counter, 'pairs'
         counter += 1
-#Check spaces in the FQ header that miss up the naming. 
-        name1 = read1.name
+        
+	name1 = read1.name
         if not check_is_left(name1):
             name1 += '/1'
         name2 = read2.name
-        if not check_is_right(name2):
-            name2 += '/2'
-
-        read1.name = name1
+        if not check_is_right(name2): 
+	     name2 += '/2'
+	read1.name = name1
         read2.name = name2
 
         if not check_is_pair(read1, read2):

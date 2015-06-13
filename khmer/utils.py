@@ -42,17 +42,17 @@ def check_is_pair(record1, record2):
     lhs2, rhs2 = _split_left_right(record2.name)
 
     # handle 'name/1'
-    if lhs1.endswith('/1') and lhs2.endswith('/2'):
-        subpart1 = lhs1.split('/', 1)[0]
-        subpart2 = lhs2.split('/', 1)[0]
-
-        assert subpart1
-        if subpart1 == subpart2:
+    if lhs1 == lhs2 and rhs1.endswith('/1') and rhs2.endswith('/2'):
             return True
 
     # handle '@name 1:rst'
-    elif lhs1 == lhs2 and rhs1.startswith('1:') and rhs2.startswith('2:'):
-        return True
+    elif lhs1.startswith('1:') and lhs2.startswith('2:'):
+        subpart1 = rhs1.split('/', 1)[0]
+        subpart2 = rhs2.split('/', 1)[0]
+
+        assert subpart1
+        if subpart1 == subpart2: 
+	     return True
 
     return False
 
@@ -65,9 +65,9 @@ def check_is_left(name):
     Handles both Casava formats: seq/1 and 'seq::... 1::...'
     """
     lhs, rhs = _split_left_right(name)
-    if lhs.endswith('/1'):              # handle 'name/1'
+    if rhs.endswith('/1'):              # handle 'name/1'
         return True
-    elif rhs.startswith('1:'):          # handle '@name 1:rst'
+    elif lhs.startswith('1:'):          # handle '@name 1:rst'
         return True
 
     return False
@@ -81,9 +81,9 @@ def check_is_right(name):
     Handles both Casava formats: seq/2 and 'seq::... 2::...'
     """
     lhs, rhs = _split_left_right(name)
-    if lhs.endswith('/2'):              # handle 'name/2'
+    if rhs.endswith('/2'):              # handle 'name/2'
         return True
-    elif rhs.startswith('2:'):          # handle '@name 2:rst'
+    elif lhs.startswith('2:'):          # handle '@name 2:rst'
         return True
 
     return False
