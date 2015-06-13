@@ -84,9 +84,9 @@ def check_is_left(name):
 def check_is_right(name):
     """Check if the name belongs to a 'right' sequence (/2).
 
-        Returns True or False.
+    Returns True or False.
 
-        Handles both Casava formats: seq/2 and 'seq::... 2::...'
+    Handles both Casava formats: seq/2 and 'seq::... 2::...'
     """
     lhs, rhs = _split_left_right(name)
     if lhs.endswith('/2'):              # handle 'name/2'
