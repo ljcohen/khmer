@@ -1,8 +1,8 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2009-2015. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 # pylint: disable=missing-docstring,invalid-name
 """
@@ -12,6 +12,7 @@ Build a counting Bloom filter from the given sequences, save in <htname>.
 
 Use '-h' for parameter help.
 """
+from __future__ import print_function, unicode_literals
 
 import json
 import os
@@ -58,8 +59,8 @@ def get_parser():
                         action='store_false', help="The default behaviour is "
                         "to count past 255 using bigcount. This flag turns "
                         "bigcount off, limiting counts to 255.")
-    parser.add_argument('--summary-info', '-s', default=None, metavar="FORMAT",
-                        choices=['json', 'tsv'],
+    parser.add_argument('--summary-info', '-s', type=str, default=None,
+                        metavar="FORMAT", choices=[str('json'), str('tsv')],
                         help="What format should the machine readable run "
                         "summary be in? (json or tsv, disabled by default)")
     parser.add_argument('--report-total-kmers', '-t', action='store_true',
@@ -88,26 +89,29 @@ def main():
     check_file_writable(base)
     check_file_writable(base + ".info")
 
-    print >>sys.stderr, 'Saving k-mer counting table to %s' % base
-    print >>sys.stderr, 'Loading kmers from sequences in %s' % repr(filenames)
+    print('Saving k-mer counting table to %s' % base, file=sys.stderr)
+    print('Loading kmers from sequences in %s' %
+          repr(filenames), file=sys.stderr)
 
     # clobber the '.info' file now, as we always open in append mode below
     if os.path.exists(base + '.info'):
         os.remove(base + '.info')
 
-    print >>sys.stderr, 'making k-mer counting table'
+    print('making k-mer counting table', file=sys.stderr)
     htable = khmer.new_counting_hash(args.ksize, args.min_tablesize,
                                      args.n_tables)
     htable.set_use_bigcount(args.bigcount)
 
     filename = None
 
+    total_num_reads = 0
+
     for index, filename in enumerate(filenames):
 
         rparser = khmer.ReadParser(filename)
         threads = []
-        print >>sys.stderr, 'consuming input', filename
-        for _ in xrange(args.threads):
+        print('consuming input', filename, file=sys.stderr)
+        for _ in range(args.threads):
             cur_thrd = \
                 threading.Thread(
                     target=htable.consume_fasta_with_reads_parser,
@@ -122,18 +126,19 @@ def main():
         if index > 0 and index % 10 == 0:
             check_space_for_hashtable(args.n_tables * args.min_tablesize,
                                       args.force)
-            print >>sys.stderr, 'mid-save', base
+            print('mid-save', base, file=sys.stderr)
             htable.save(base)
         with open(base + '.info', 'a') as info_fh:
-            print >> info_fh, 'through', filename
+            print('through', filename, file=info_fh)
+        total_num_reads += rparser.num_reads
 
     n_kmers = htable.n_unique_kmers()
     if args.report_total_kmers:
-        print >> sys.stderr, 'Total number of unique k-mers:', n_kmers
+        print('Total number of unique k-mers:', n_kmers, file=sys.stderr)
         with open(base + '.info', 'a') as info_fp:
-            print >>info_fp, 'Total number of unique k-mers:', n_kmers
+            print('Total number of unique k-mers:', n_kmers, file=info_fp)
 
-    print >>sys.stderr, 'saving', base
+    print('saving', base, file=sys.stderr)
     htable.save(base)
 
     # Change max_false_pos=0.2 only if you really grok it. HINT: You don't
@@ -141,12 +146,12 @@ def main():
         khmer.calc_expected_collisions(htable, args.force, max_false_pos=.2)
 
     with open(base + '.info', 'a') as info_fp:
-        print >> info_fp, 'fp rate estimated to be %1.3f\n' % fp_rate
+        print('fp rate estimated to be %1.3f\n' % fp_rate, file=info_fp)
 
     if args.summary_info:
         mr_fmt = args.summary_info.lower()
         mr_file = base + '.info.' + mr_fmt
-        print >> sys.stderr, "Writing summmary info to", mr_file
+        print("Writing summmary info to", mr_file, file=sys.stderr)
         with open(mr_file, 'w') as mr_fh:
             if mr_fmt == 'json':
                 mr_data = {
@@ -154,20 +159,26 @@ def main():
                     "fpr": fp_rate,
                     "num_kmers": n_kmers,
                     "files": filenames,
-                    "mrinfo_version": "0.1.0",
+                    "mrinfo_version": "0.2.0",
+                    "num_reads": total_num_reads,
                 }
                 json.dump(mr_data, mr_fh)
                 mr_fh.write('\n')
             elif mr_fmt == 'tsv':
-                mr_fh.write("ht_name\tfpr\tnum_kmers\tfiles\n")
-                mr_fh.write("{b:s}\t{fpr:1.3f}\t{k:d}\t{fls:s}\n".format(
-                    b=os.path.basename(base), fpr=fp_rate, k=n_kmers,
-                    fls=";".join(filenames)))
+                mr_fh.write("ht_name\tfpr\tnum_kmers\tnum_reads\tfiles\n")
+                vals = [
+                    os.path.basename(base),
+                    "{:1.3f}".format(fp_rate),
+                    str(n_kmers),
+                    str(total_num_reads),
+                    ";".join(filenames),
+                ]
+                mr_fh.write("\t".join(vals) + "\n")
 
-    print >> sys.stderr, 'fp rate estimated to be %1.3f' % fp_rate
+    print('fp rate estimated to be %1.3f' % fp_rate, file=sys.stderr)
 
-    print >>sys.stderr, 'DONE.'
-    print >>sys.stderr, 'wrote to:', base + '.info'
+    print('DONE.', file=sys.stderr)
+    print('wrote to:', base + '.info', file=sys.stderr)
 
 if __name__ == '__main__':
     main()

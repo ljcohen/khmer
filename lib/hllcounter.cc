@@ -1,7 +1,7 @@
 //
-// This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+// This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 // Copyright (C) Michigan State University, 2014-2015. It is licensed under
-// the three-clause BSD license; see doc/LICENSE.txt.
+// the three-clause BSD license; see LICENSE.
 // Contact: khmer-project@idyll.org
 //
 
@@ -16,6 +16,7 @@
 #include "khmer.hh"
 #include "kmer_hash.hh"
 #include "read_parsers.hh"
+#include "khmer_exception.hh"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -321,10 +322,15 @@ void HLLCounter::add(const std::string &value)
     this->M[j] = std::max(this->M[j], get_rho(x >> this->p, 64 - this->p));
 }
 
-unsigned int HLLCounter::consume_string(const std::string &s)
+unsigned int HLLCounter::consume_string(const std::string &inp)
 {
     unsigned int n_consumed = 0;
     std::string kmer = "";
+    std::string s = inp;
+
+    for (unsigned int i = 0; i < s.length(); i++)  {
+        s[i] &= 0xdf; // toupper - knock out the "lowercase bit"
+    }
 
     for(std::string::const_iterator it = s.begin(); it != s.end(); ++it) {
         kmer.push_back(*it);
@@ -455,6 +461,9 @@ bool HLLCounter::check_and_normalize_read(std::string &read) const
 
 void HLLCounter::merge(HLLCounter &other)
 {
+    if (this->p != other.p || this->_ksize != other._ksize) {
+        throw khmer_exception("HLLCounters to be merged must be created with same parameters");
+    }
     for(unsigned int i=0; i < this->M.size(); ++i) {
         this->M[i] = std::max(other.M[i], this->M[i]);
     }

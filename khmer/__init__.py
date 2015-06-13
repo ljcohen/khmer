@@ -1,10 +1,12 @@
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2010-2015. It is licensed under
 # the three-clause BSD license; see doc/LICENSE.txt.
 # Contact: khmer-project@idyll.org
 #
 """This is khmer; please see http://khmer.readthedocs.org/."""
+
+from __future__ import print_function
 
 from khmer._khmer import CountingHash
 from khmer._khmer import LabelHash as _LabelHash
@@ -179,12 +181,14 @@ def calc_expected_collisions(hashtable, force=False, max_false_pos=.2):
     fp_all = fp_one ** n_ht
 
     if fp_all > max_false_pos:
-        print >>sys.stderr, "**"
-        print >>sys.stderr, "** ERROR: the graph structure is too small for "
-        print >>sys.stderr, "this data set.  Increase k-mer presence table "
-        print >>sys.stderr, "size/num of tables."
-        print >>sys.stderr, "** Do not use these results!!"
-        print >>sys.stderr, "**"
+        print("**", file=sys.stderr)
+        print(
+            "** ERROR: the graph structure is too small for ", file=sys.stderr)
+        print(
+            "this data set.  Increase k-mer presence table ", file=sys.stderr)
+        print("size/num of tables.", file=sys.stderr)
+        print("** Do not use these results!!", file=sys.stderr)
+        print("**", file=sys.stderr)
         if not force:
             sys.exit(1)
 
@@ -256,9 +260,19 @@ def get_n_primes_above_x(number, target):
 class LabelHash(_LabelHash):
 
     def __new__(cls, k, starting_size, n_tables):
+        hb = Hashbits(k, starting_size, n_tables)
+        c = _LabelHash.__new__(cls, hb)
+        c.graph = hb
+        return c
+
+
+class CountingLabelHash(_LabelHash):
+
+    def __new__(cls, k, starting_size, n_tables):
         primes = get_n_primes_above_x(n_tables, starting_size)
-        c = _LabelHash.__new__(cls, k, primes)
-        c.primes = primes
+        hb = CountingHash(k, primes)
+        c = _LabelHash.__new__(cls, hb)
+        c.graph = hb
         return c
 
 

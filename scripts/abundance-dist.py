@@ -1,8 +1,8 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2010-2015. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 #
 # pylint: disable=missing-docstring,invalid-name
@@ -63,8 +63,8 @@ def main():
     for infile in infiles:
         check_input_files(infile, args.force)
 
-    print ('hashtable from', args.input_counting_table_filename,
-           file=sys.stderr)
+    print('hashtable from', args.input_counting_table_filename,
+          file=sys.stderr)
     counting_hash = khmer.load_counting_hash(
         args.input_counting_table_filename)
 
@@ -73,9 +73,9 @@ def main():
     tracking = khmer._Hashbits(  # pylint: disable=protected-access
         kmer_size, hashsizes)
 
-    print ('K:', kmer_size, file=sys.stderr)
-    print ('HT sizes:', hashsizes, file=sys.stderr)
-    print ('outputting to', args.output_histogram_filename, file=sys.stderr)
+    print('K:', kmer_size, file=sys.stderr)
+    print('HT sizes:', hashsizes, file=sys.stderr)
+    print('outputting to', args.output_histogram_filename, file=sys.stderr)
 
     if os.path.exists(args.output_histogram_filename):
         if not args.squash_output:

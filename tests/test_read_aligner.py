@@ -1,8 +1,10 @@
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
-# Copyright (C) Michigan State University, 2009-2013. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt. Contact: ctb@msu.edu
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
+# Copyright (C) Michigan State University, 2009-2015. It is licensed under
+# the three-clause BSD license; see LICENSE. Contact: ctb@msu.edu
 #
+from __future__ import print_function
+
 import khmer
 from nose.tools import assert_almost_equals
 
@@ -214,8 +216,8 @@ def test_readalign_new():
 
     for query in queries:
         score, graphAlign, readAlign, trunc = aligner.align(query["seq"])
-        print graphAlign
-        print readAlign
+        print(graphAlign)
+        print(readAlign)
         eq_(graphAlign, query["graph_aln"])
         eq_(readAlign, query["read_aln"])
         eq_(trunc, query["truncated"])

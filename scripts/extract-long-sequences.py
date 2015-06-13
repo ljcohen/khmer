@@ -1,8 +1,8 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2009-2015. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 #
 # pylint: disable=invalid-name,missing-docstring
@@ -18,6 +18,7 @@ length.
 
 Use '-h' for parameter help.
 """
+from __future__ import print_function
 import argparse
 import screed
 import sys
@@ -47,7 +48,7 @@ def main():
         for record in screed.open(filename, parse_description=False):
             if len(record['sequence']) >= args.length:
                 write_record(record, outfp)
-    print >> sys.stderr, 'wrote to: ' + args.output
+    print('wrote to: ' + args.output, file=sys.stderr)
 
 if __name__ == '__main__':
     main()

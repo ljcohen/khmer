@@ -1,14 +1,16 @@
+from __future__ import print_function
+from __future__ import absolute_import
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
-# Copyright (C) Michigan State University, 2009-2013. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
+# Copyright (C) Michigan State University, 2009-2015. It is licensed under
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 #
 import khmer
 from screed.fasta import fasta_iter
 from nose.plugins.attrib import attr
 
-import khmer_tst_utils as utils
+from . import khmer_tst_utils as utils
 
 
 def teardown():
@@ -35,18 +37,18 @@ class Test_Filter(object):
             ht.consume_fasta()
             assert 0, "should fail"
         except TypeError as err:
-            print str(err)
+            print(str(err))
         try:
             ht.consume_fasta("nonexistent")
             assert 0, "should fail"
         except IOError as err:
-            print str(err)
+            print(str(err))
         ht.output_fasta_kmer_pos_freq(filename, outname)
         try:
             ht.output_fasta_kmer_pos_freq()
             assert 0, "should fail"
         except TypeError as err:
-            print str(err)
+            print(str(err))
 
         fd = open(outname, "r")
 

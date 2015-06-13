@@ -1,7 +1,7 @@
 //
-// This file is part of khmer, http://github.com/ged-lab/khmer/, and is
-// Copyright (C) Michigan State University, 2009-2013. It is licensed under
-// the three-clause BSD license; see doc/LICENSE.txt.
+// This file is part of khmer, https://github.com/dib-lab/khmer/, and is
+// Copyright (C) Michigan State University, 2009-2015. It is licensed under
+// the three-clause BSD license; see LICENSE.
 // Contact: khmer-project@idyll.org
 //
 
@@ -174,6 +174,7 @@ public:
 class Hashtable  		// Base class implementation of a Bloom ht.
 {
     friend class SubsetPartition;
+    friend class LabelHash;
 protected:
     unsigned int _tag_density;
 
@@ -291,6 +292,9 @@ public:
         unsigned long long  &n_consumed
     );
 
+    bool median_at_least(const std::string &s,
+                         unsigned int cutoff);
+
     void get_median_count(const std::string &s,
                           BoundedCounterType &median,
                           float &average,
@@ -388,6 +392,12 @@ public:
     virtual BoundedCounterType test_and_set_bits(const char * kmer) = 0;
     virtual BoundedCounterType test_and_set_bits(HashIntoType khash) = 0;
 
+    virtual std::vector<HashIntoType> get_tablesizes() const = 0;
+    virtual const size_t n_tables() const = 0;
+    virtual const HashIntoType n_occupied(HashIntoType start=0,
+                                          HashIntoType stop=0) const = 0;
+    virtual const HashIntoType n_entries() const = 0;
+
     void filter_if_present(const std::string &infilename,
                            const std::string &outputfilename);
 
@@ -455,6 +465,18 @@ public:
 
         return kmer_degree(kmer_f, kmer_r);
     }
+
+    // return all k-mer substrings, on the forward strand.
+    void get_kmers(const std::string &s, std::vector<std::string> &kmers)
+    const;
+
+    // return hash values for all k-mer substrings
+    void get_kmer_hashes(const std::string &s,
+                         std::vector<HashIntoType> &kmers) const;
+
+    // return counts of all k-mers in this string.
+    void get_kmer_counts(const std::string &s,
+                         std::vector<BoundedCounterType> &counts) const;
 };
 };
 

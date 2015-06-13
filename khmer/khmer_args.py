@@ -1,14 +1,17 @@
 #
 # vim: set encoding=utf-8
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
-# Copyright (C) Michigan State University, 2014. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
+# Copyright (C) Michigan State University, 2014-2015. It is licensed under
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 #
+
+from __future__ import unicode_literals
 
 import sys
 import os
 import argparse
+from argparse import _VersionAction
 from khmer import extract_countinghash_info, extract_hashbits_info
 from khmer import __version__
 import screed
@@ -19,23 +22,35 @@ DEFAULT_MIN_TABLESIZE = 1e6
 DEFAULT_N_THREADS = 1
 
 
+class _VersionStdErrAction(_VersionAction):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        version = self.version
+        if version is None:
+            version = parser.version
+        formatter = parser._get_formatter()
+        formatter.add_text(version)
+        parser._print_message(formatter.format_help(), sys.stderr)
+        parser.exit()
+
+
 class ComboFormatter(argparse.ArgumentDefaultsHelpFormatter,
                      argparse.RawDescriptionHelpFormatter):
     pass
 
 
-def build_hash_args(descr=None, epilog=None):
+def build_hash_args(descr=None, epilog=None, parser=None):
     """Build an ArgumentParser with args for bloom filter based scripts."""
-    parser = argparse.ArgumentParser(
-        description=descr, epilog=epilog,
-        formatter_class=ComboFormatter)
+    if parser is None:
+        parser = argparse.ArgumentParser(description=descr, epilog=epilog,
+                                         formatter_class=ComboFormatter)
 
     env_ksize = os.environ.get('KHMER_KSIZE', DEFAULT_K)
     env_n_tables = os.environ.get('KHMER_N_TABLES', DEFAULT_N_TABLES)
     env_tablesize = os.environ.get('KHMER_MIN_TABLESIZE',
                                    DEFAULT_MIN_TABLESIZE)
 
-    parser.add_argument('--version', action='version',
+    parser.add_argument('--version', action=_VersionStdErrAction,
                         version='khmer {v}'.format(v=__version__))
     parser.add_argument('-q', '--quiet', dest='quiet', default=False,
                         action='store_true')
@@ -60,9 +75,10 @@ def build_counting_args(descr=None, epilog=None):
     return parser
 
 
-def build_hashbits_args(descr=None, epilog=None):
+def build_hashbits_args(descr=None, epilog=None, parser=None):
     """Build an ArgumentParser with args for hashbits based scripts."""
-    parser = build_hash_args(descr=descr, epilog=epilog)
+
+    parser = build_hash_args(descr=descr, epilog=epilog, parser=parser)
     parser.hashtype = 'hashbits'
 
     return parser
@@ -196,7 +212,13 @@ def info(scriptname, algorithm_list=None):
 
     for alg in algorithm_list:
         sys.stderr.write("||   * ")
-        sys.stderr.write(_algorithms[alg])
+        algstr = _algorithms[alg].encode(
+            'utf-8', 'surrogateescape').decode('utf-8', 'replace')
+        try:
+            sys.stderr.write(algstr)
+        except UnicodeEncodeError:
+            sys.stderr.write(
+                algstr.encode(sys.getfilesystemencoding(), 'replace'))
         sys.stderr.write("\n")
 
     sys.stderr.write("||\n|| Please see http://khmer.readthedocs.org/en/"

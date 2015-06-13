@@ -1,8 +1,8 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 #
-# This file is part of khmer, http://github.com/ged-lab/khmer/, and is
+# This file is part of khmer, https://github.com/dib-lab/khmer/, and is
 # Copyright (C) Michigan State University, 2009-2015. It is licensed under
-# the three-clause BSD license; see doc/LICENSE.txt.
+# the three-clause BSD license; see LICENSE.
 # Contact: khmer-project@idyll.org
 #
 # pylint: disable=missing-docstring,invalid-name
@@ -16,6 +16,7 @@ hash table.  Output sequences will be placed in 'infile.abundfilt'.
 
 Use '-h' for parameter help.
 """
+from __future__ import print_function
 import os
 import khmer
 import textwrap
@@ -80,39 +81,41 @@ def main():
 
     check_input_files(args.input_table, args.force)
     infiles = args.input_filename
-    for _ in infiles:
-        check_input_files(_, args.force)
+    for filename in infiles:
+        check_input_files(filename, args.force)
 
     check_space(infiles, args.force)
 
-    print >>sys.stderr, 'loading hashtable'
+    print('loading counting table:', args.input_table,
+          file=sys.stderr)
     htable = khmer.load_counting_hash(args.input_table)
     ksize = htable.ksize()
 
-    print >>sys.stderr, "K:", ksize
+    print("K:", ksize, file=sys.stderr)
 
     # the filtering function.
     def process_fn(record):
-        name = record['name']
-        seq = record['sequence']
-        if 'N' in seq:
-            return None, None
+        name = record.name
+        seq = record.sequence
+        seqN = seq.replace('N', 'A')
 
         if args.variable_coverage:  # only trim when sequence has high enough C
-            med, _, _ = htable.get_median_count(seq)
+            med, _, _ = htable.get_median_count(seqN)
             if med < args.normalize_to:
                 return name, seq
 
-        trim_seq, trim_at = htable.trim_on_abundance(seq, args.cutoff)
+        _, trim_at = htable.trim_on_abundance(seqN, args.cutoff)
 
         if trim_at >= ksize:
-            return name, trim_seq
+            # be sure to not to change the 'N's in the trimmed sequence -
+            # so, return 'seq' and not 'seqN'.
+            return name, seq[:trim_at]
 
         return None, None
 
     # the filtering loop
     for infile in infiles:
-        print >>sys.stderr, 'filtering', infile
+        print('filtering', infile, file=sys.stderr)
         if args.single_output_filename != '':
             outfile = args.single_output_filename
             outfp = open(outfile, 'a')
@@ -123,7 +126,7 @@ def main():
         tsp = ThreadedSequenceProcessor(process_fn, n_workers=args.threads)
         tsp.start(verbose_loader(infile), outfp)
 
-        print >>sys.stderr, 'output in', outfile
+        print('output in', outfile, file=sys.stderr)
 
 if __name__ == '__main__':
     main()
