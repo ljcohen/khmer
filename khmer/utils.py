@@ -55,7 +55,11 @@ def check_is_pair(record1, record2):
     elif lhs1 == lhs2 and rhs1.startswith('1:') and rhs2.startswith('2:'):
         return True
 
-    return False
+    # handle @name seq/1 
+    elif lhs1 == lhs2 and rhs1.endswith('/1') and rhs2.endswith('/2'):
+        return True
+
+    return False 
 
 
 def check_is_left(name):
@@ -70,6 +74,9 @@ def check_is_left(name):
         return True
     elif rhs.startswith('1:'):          # handle '@name 1:rst'
         return True
+     
+    elif rhs.endswith('/1'):            #handles '@name seq/1'
+	return True
 
     return False
 
@@ -87,6 +94,9 @@ def check_is_right(name):
     elif rhs.startswith('2:'):          # handle '@name 2:rst'
         return True
 
+    elif rhs.endswith('/2'):            #handles '@name seq/2'
+        return True
+    
     return False
 
 
