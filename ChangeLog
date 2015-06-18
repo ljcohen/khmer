@@ -1,3 +1,7 @@
+2015-06-18  Kevin Murray  <spam@kdmurray.id.au>
+
+   * README.rst: Fix link to virtualenv installation instructions.
+
 2015-06-17  Titus Brown  <titus@idyll.org>
 
    * scripts/normalize-by-median.py: changed DEFAULT_DESIRED_COVERAGE to 20,
