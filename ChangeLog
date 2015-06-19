@@ -1,3 +1,14 @@
+2015-06-19  Jacob Fenton  <bocajnotnef@gmail.com>
+
+   * tests/test_sandbox_scripts.py: made error more informative and not crashy
+   * sandbox/{estimate_optimal_hash,optimal_args_hashbits}.py: minor cleanups
+
+2015-06-19  Qingpeng Zhang  <qingpeng@msu.edu>
+
+   * sandbox/{estimate_optimal_hash,optimal_args_HLL,optimal_args_hashbits}.py:
+   added sandbox methods for estimating memory usage based on desired fp rate,
+   etc.
+
 2015-06-19  Titus Brown  <titus@idyll.org>
 
    * Makefile: temporarily disable 'huge' tests on Linux.
